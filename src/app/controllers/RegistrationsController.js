@@ -114,7 +114,15 @@ class RegistrationsController {
     const { id } = req.params;
     const { plan_id, start_date } = req.body;
 
-    const register = await Registrations.findByPk(id);
+    const register = await Registrations.findByPk(id, {
+      include: [
+        {
+          model: Students,
+          as: 'student',
+          attributes: ['name', 'email'],
+        },
+      ],
+    });
 
     if (register.plan_id !== plan_id) {
       const checkPlan = await Plan.findOne({ where: { id: plan_id } });
@@ -126,7 +134,7 @@ class RegistrationsController {
 
     const newPlan = await Plan.findOne({ where: { id: plan_id } });
 
-    const { duration, price } = newPlan;
+    const { title, duration, price } = newPlan;
 
     const formarttedDate = parseISO(start_date);
 
@@ -139,6 +147,20 @@ class RegistrationsController {
       start_date: formarttedDate,
       end_date: endDate,
       price: totalPrice,
+    });
+
+    await Mail.sendEmail({
+      to: `${register.student.name} <${register.student.email}>`,
+      subject: 'Seu plano mudou!',
+      template: 'updatePlan',
+      context: {
+        user: register.student.name,
+        startDate: format(formarttedDate, "dd'/'MM'/'yyyy", { locale: pt }),
+        plan: title,
+        month: duration,
+        endDate: format(endDate, "dd'/'MM'/'yyyy", { locale: pt }),
+        price: totalPrice,
+      },
     });
 
     return res.json(registrations);
