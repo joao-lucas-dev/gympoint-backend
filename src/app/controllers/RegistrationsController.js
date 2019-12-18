@@ -1,8 +1,11 @@
 import * as Yup from 'yup';
-import { addMonths, parseISO } from 'date-fns';
+import { addMonths, parseISO, format } from 'date-fns';
+import pt from 'date-fns/locale/pt';
 import Students from '../models/Students';
 import Plan from '../models/Plan';
 import Registrations from '../models/Registrations';
+
+import Mail from '../../lib/Mail';
 
 class RegistrationsController {
   async store(req, res) {
@@ -52,6 +55,20 @@ class RegistrationsController {
       start_date: formarttedDate,
       end_date: endDate,
       price: totalPrice,
+    });
+
+    await Mail.sendEmail({
+      to: `${student.name} <${student.email}>`,
+      subject: 'Bem-vindo a GymPoint',
+      template: 'welcome',
+      context: {
+        user: student.name,
+        startDate: format(formarttedDate, "dd'/'MM'/'yyyy", { locale: pt }),
+        plan: plan.title,
+        month: plan.duration,
+        endDate: format(endDate, "dd'/'MM'/'yyyy", { locale: pt }),
+        price: totalPrice,
+      },
     });
 
     return res.json(register);
