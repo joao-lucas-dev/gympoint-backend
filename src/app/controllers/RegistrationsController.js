@@ -56,6 +56,49 @@ class RegistrationsController {
 
     return res.json(register);
   }
+
+  async update(req, res) {
+    const schemas = Yup.object().shape({
+      plan_id: Yup.number(),
+      start_date: Yup.date(),
+    });
+
+    if (!(await schemas.isValid(req.body))) {
+      return res.status(400).json({ error: 'Validations fails' });
+    }
+
+    const { id } = req.params;
+    const { plan_id, start_date } = req.body;
+
+    const register = await Registrations.findByPk(id);
+
+    if (register.plan_id !== plan_id) {
+      const checkPlan = await Plan.findOne({ where: { id: plan_id } });
+
+      if (!checkPlan) {
+        return res.status(400).json({ error: 'Plan not found' });
+      }
+    }
+
+    const newPlan = await Plan.findOne({ where: { id: plan_id } });
+
+    const { duration, price } = newPlan;
+
+    const formarttedDate = parseISO(start_date);
+
+    const endDate = addMonths(formarttedDate, duration);
+
+    const totalPrice = price * duration;
+
+    const registrations = await register.update({
+      plan_id,
+      start_date: formarttedDate,
+      end_date: endDate,
+      price: totalPrice,
+    });
+
+    return res.json(registrations);
+  }
 }
 
 export default new RegistrationsController();
