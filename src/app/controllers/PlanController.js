@@ -38,6 +38,40 @@ class PlanController {
       price,
     });
   }
+
+  async update(req, res) {
+    const schemas = Yup.object().shape({
+      title: Yup.string(),
+      duration: Yup.number(),
+      price: Yup.number(),
+    });
+
+    if (!(await schemas.isValid(req.body))) {
+      return res.status(400).json({ error: 'Validations fails' });
+    }
+
+    const { id } = req.params;
+    const { title } = req.body;
+
+    const plan = await Plan.findByPk(id);
+
+    if (plan.title !== title) {
+      const checkTitle = await Plan.findOne({ where: { title } });
+
+      if (checkTitle) {
+        return res.status(400).json({ error: 'Title already in use' });
+      }
+    }
+
+    const { duration, price } = await plan.update(req.body);
+
+    return res.json({
+      id,
+      title,
+      duration,
+      price,
+    });
+  }
 }
 
 export default new PlanController();
