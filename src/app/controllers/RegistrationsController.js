@@ -57,6 +57,33 @@ class RegistrationsController {
     return res.json(register);
   }
 
+  async index(req, res) {
+    const registrations = await Registrations.findAll({
+      attributes: [
+        'id',
+        'student_id',
+        'plan_id',
+        'start_date',
+        'end_date',
+        'price',
+      ],
+      include: [
+        {
+          model: Students,
+          as: 'student',
+          attributes: ['name', 'email', 'age', 'weight', 'height'],
+        },
+        {
+          model: Plan,
+          as: 'plan',
+          attributes: ['title', 'duration'],
+        },
+      ],
+    });
+
+    return res.json(registrations);
+  }
+
   async update(req, res) {
     const schemas = Yup.object().shape({
       plan_id: Yup.number(),
@@ -98,6 +125,14 @@ class RegistrationsController {
     });
 
     return res.json(registrations);
+  }
+
+  async delete(req, res) {
+    const { id } = req.params;
+
+    await Registrations.destroy({ where: { id } });
+
+    return res.json();
   }
 }
 
